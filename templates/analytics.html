@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}ResolveAI - Analytics & Grievance Intelligence{% endblock %}
+
+{% block head %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-chart-pie" style="color: #38BDF8;"></i>
+            Analytics & Operational Intelligence
+        </h1>
+        <p class="page-subtitle">
+            High-level distribution metrics, priority breakdown, and department load powered by Chart.js.
+        </p>
+    </div>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="loadAnalyticsData()">
+        <i class="fa-solid fa-arrows-rotate"></i> Refresh Analytics
+    </button>
+</div>
+
+<!-- Charts Grid -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Chart 1: Priority Breakdown -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-gauge-high" style="color: #F87171;"></i>
+                Grievance Priority Distribution
+            </div>
+        </div>
+        <div class="card-body" style="height: 320px; position: relative;">
+            <canvas id="priorityChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 2: Status Breakdown -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-chart-pie" style="color: #60A5FA;"></i>
+                Lifecycle Status Breakdown
+            </div>
+        </div>
+        <div class="card-body" style="height: 320px; position: relative;">
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Chart 3: Department Breakdown (Full Width) -->
+    <div class="card" style="grid-column: span 2;">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-building-user" style="color: #A78BFA;"></i>
+                Workload Distribution by Campus Department
+            </div>
+        </div>
+        <div class="card-body" style="height: 340px; position: relative;">
+            <canvas id="departmentChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Global Recent Agent Activity Log -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fa-solid fa-microchip" style="color: #38BDF8;"></i>
+            Global Multi-Agent Activity Feed (Latest Decisions)
+        </div>
+        <span class="pill-badge"><i class="fa-solid fa-stream"></i> Real-Time Feed</span>
+    </div>
+    <div class="card-body">
+        <div id="globalLogsContainer" style="max-height: 400px; overflow-y: auto;">
+            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                <i class="fa-solid fa-spinner fa-spin"></i> Loading agent logs...
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+{% endblock %}

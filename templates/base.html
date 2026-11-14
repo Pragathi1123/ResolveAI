@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ResolveAI - Autonomous Grievance & Resolution Assistant{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Top Header & Navigation -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand-group">
+                {% if current_user %}
+                    {% if current_user.role == 'student' %}
+                        {% set brand_url = url_for('student_dashboard_page') %}
+                    {% elif current_user.role == 'staff' %}
+                        {% set brand_url = url_for('staff_dashboard_page') %}
+                    {% else %}
+                        {% set brand_url = url_for('admin_page') %}
+                    {% endif %}
+                {% else %}
+                    {% set brand_url = url_for('login_page') %}
+                {% endif %}
+                <a href="{{ brand_url }}" class="brand-link">
+                    <div class="brand-icon">
+                        <i class="fa-solid fa-microchip"></i>
+                    </div>
+                    <div class="brand-text">
+                        <span class="brand-name">RESOLVE<span class="accent-text">AI</span></span>
+                        <span class="brand-sub">Agentic Resolution Assistant</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Navigation Links based on Authentication & Role -->
+            <nav class="nav-links">
+                {% if current_user %}
+                    {% if current_user.role == 'student' %}
+                        <a href="{{ url_for('student_dashboard_page') }}" class="nav-item {% if active_tab == 'student_dashboard' %}active{% endif %}">
+                            <i class="fa-solid fa-gauge"></i>
+                            <span>My Grievances</span>
+                        </a>
+                        <a href="{{ url_for('submit_page') }}" class="nav-item {% if active_tab == 'submit' %}active{% endif %}">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                            <span>Submit Grievance</span>
+                        </a>
+                        <a href="{{ url_for('track_page') }}" class="nav-item {% if active_tab == 'track' %}active{% endif %}">
+                            <i class="fa-solid fa-magnifying-glass-location"></i>
+                            <span>Track Ticket</span>
+                        </a>
+                    {% elif current_user.role == 'staff' %}
+                        <a href="{{ url_for('staff_dashboard_page') }}" class="nav-item {% if active_tab == 'staff_dashboard' %}active{% endif %}">
+                            <i class="fa-solid fa-briefcase"></i>
+                            <span>Staff Operations</span>
+                        </a>
+                        <a href="{{ url_for('track_page') }}" class="nav-item {% if active_tab == 'track' %}active{% endif %}">
+                            <i class="fa-solid fa-magnifying-glass-location"></i>
+                            <span>Track Ticket</span>
+                        </a>
+                    {% elif current_user.role == 'admin' %}
+                        <a href="{{ url_for('admin_page') }}" class="nav-item {% if active_tab == 'admin' %}active{% endif %}">
+                            <i class="fa-solid fa-table-columns"></i>
+                            <span>Admin Dashboard</span>
+                        </a>
+                        <a href="{{ url_for('admin_staff_page') }}" class="nav-item {% if active_tab == 'admin_staff' %}active{% endif %}">
+                            <i class="fa-solid fa-users-gear"></i>
+                            <span>Staff Directory</span>
+                        </a>
+                        <a href="{{ url_for('analytics_page') }}" class="nav-item {% if active_tab == 'analytics' %}active{% endif %}">
+                            <i class="fa-solid fa-chart-pie"></i>
+                            <span>Analytics</span>
+                        </a>
+                        <a href="{{ url_for('track_page') }}" class="nav-item {% if active_tab == 'track' %}active{% endif %}">
+                            <i class="fa-solid fa-magnifying-glass-location"></i>
+                            <span>Track Ticket</span>
+                        </a>
+                    {% endif %}
+                {% else %}
+                    <a href="{{ url_for('login_page') }}" class="nav-item {% if active_tab == 'login' %}active{% endif %}">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span>Login</span>
+                    </a>
+                    <a href="{{ url_for('register_page') }}" class="nav-item {% if active_tab == 'register' %}active{% endif %}">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Student Registration</span>
+                    </a>
+                {% endif %}
+            </nav>
+
+            <!-- User Info & Engine Status -->
+            <div class="user-session-bar" style="display: flex; align-items: center; gap: 0.85rem;">
+                <!-- AI Engine Indicator -->
+                <div class="ai-status-badge">
+                    {% if is_gemini_active %}
+                    <span class="engine-indicator gemini-live" title="Google Gemini 2.5 Flash active">
+                        <span class="pulse-dot"></span>
+                        <i class="fa-brands fa-google"></i> Gemini AI
+                    </span>
+                    {% else %}
+                    <span class="engine-indicator local-fallback" title="Running in intelligent rule-based agent fallback mode.">
+                        <span class="pulse-dot fallback-dot"></span>
+                        <i class="fa-solid fa-robot"></i> Smart Agent Engine
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if current_user %}
+                <div class="user-profile-badge">
+                    <div class="user-avatar-circle">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="user-meta">
+                        <span class="user-display-name">{{ current_user.name }}</span>
+                        <span class="user-role-tag role-{{ current_user.role }}">
+                            {{ current_user.role|upper }}
+                            {% if current_user.department %}
+                                &bull; {{ current_user.department }}
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('logout_page') }}" class="btn btn-secondary btn-sm" title="Log Out" style="padding: 0.4rem 0.75rem;">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span style="font-size: 0.78rem;">Logout</span>
+                </a>
+                {% else %}
+                <a href="{{ url_for('login_page') }}" class="btn btn-primary btn-sm" style="padding: 0.45rem 0.95rem;">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Sign In</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-container">
+        <!-- Flash Alert Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages-container" style="margin-bottom: 1.5rem;">
+                    {% for category, message in messages %}
+                        <div class="flash-alert flash-{{ category }}">
+                            <i class="fa-solid {% if category == 'error' or category == 'danger' %}fa-triangle-exclamation{% elif category == 'success' %}fa-circle-check{% else %}fa-circle-info{% endif %}"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <p><strong>ResolveAI</strong> &copy; 2026 &mdash; Autonomous Campus Complaint Intelligence & Workflow Automation</p>
+            <div class="footer-badges">
+                <span class="pill-badge"><i class="fa-solid fa-shield-halved"></i> Role-Based Access Control</span>
+                <span class="pill-badge"><i class="fa-solid fa-lock"></i> Werkzeug Secured</span>
+                <span class="pill-badge"><i class="fa-solid fa-database"></i> SQLite Persistent</span>
+            </div>
+        </div>
+    </footer>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

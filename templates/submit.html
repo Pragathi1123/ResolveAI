@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}ResolveAI - Submit Student Grievance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-file-pen" style="color: #60A5FA;"></i>
+            Autonomous Grievance Submission
+        </h1>
+        <p class="page-subtitle">
+            Submit a campus issue. The ResolveAI multi-agent collective will analyze, prioritize, route, and dispatch your ticket in real time.
+        </p>
+    </div>
+</div>
+
+<!-- Quick Sample Scenario Bar -->
+<div class="sample-scenarios-panel">
+    <div class="form-label" style="margin-bottom: 0.35rem;">
+        <i class="fa-solid fa-wand-magic-sparkles" style="color: #38BDF8;"></i>
+        Quick-Load Realistic Scenarios (1-Click Demo):
+    </div>
+    <div class="scenario-pill-group">
+        <button type="button" class="scenario-pill" onclick="loadSampleScenario('wifi')">
+            <i class="fa-solid fa-wifi"></i> Hostel Wi-Fi Outage (Midterms)
+        </button>
+        <button type="button" class="scenario-pill" onclick="loadSampleScenario('leak')">
+            <i class="fa-solid fa-droplet"></i> Library Stack Water Leak
+        </button>
+        <button type="button" class="scenario-pill" onclick="loadSampleScenario('fee')">
+            <i class="fa-solid fa-credit-card"></i> Duplicate Tuition Deduction
+        </button>
+        <button type="button" class="scenario-pill" onclick="loadSampleScenario('food')">
+            <i class="fa-solid fa-utensils"></i> Dining Mess Hygiene Violation
+        </button>
+        <button type="button" class="scenario-pill" onclick="loadSampleScenario('light')">
+            <i class="fa-solid fa-lightbulb"></i> Dark Pathway & Safety Hazard
+        </button>
+        <button type="button" class="scenario-pill" onclick="loadSampleScenario('lab')">
+            <i class="fa-solid fa-snowflake"></i> GPU Lab AC Overheating
+        </button>
+    </div>
+</div>
+
+<!-- Submission Card -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fa-solid fa-clipboard-list" style="color: #3B82F6;"></i>
+            Grievance Intake Form
+        </div>
+        <span class="pill-badge">
+            <i class="fa-solid fa-shield-halved"></i> AI Intake Validated
+        </span>
+    </div>
+    <div class="card-body">
+        <form id="grievanceForm" onsubmit="handleGrievanceSubmit(event)">
+            <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="studentName">
+                        <i class="fa-solid fa-user"></i> Student Name
+                    </label>
+                    <input type="text" id="studentName" class="form-input" placeholder="e.g. Rahul Verma" value="{{ current_user.name if current_user else '' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="studentEmail">
+                        <i class="fa-solid fa-envelope"></i> Student Email or ID
+                    </label>
+                    <input type="email" id="studentEmail" class="form-input" placeholder="e.g. rahul.v@campus.edu" value="{{ current_user.email if current_user else '' }}" required>
+                </div>
+
+                <div class="form-group col-span-2">
+                    <label class="form-label" for="location">
+                        <i class="fa-solid fa-location-dot"></i> Specific Campus Location
+                    </label>
+                    <input type="text" id="location" class="form-input" placeholder="e.g. Hostel Block B, Floor 3, Room 312 or Central Library Stack 12" required>
+                </div>
+
+                <div class="form-group col-span-2">
+                    <label class="form-label" for="subject">
+                        <i class="fa-solid fa-heading"></i> Grievance Subject / Summary
+                    </label>
+                    <input type="text" id="subject" class="form-input" placeholder="e.g. Unusable Wi-Fi connection during online examination" required>
+                </div>
+
+                <div class="form-group col-span-2">
+                    <label class="form-label" for="rawDescription">
+                        <i class="fa-solid fa-align-left"></i> Detailed Description
+                    </label>
+                    <textarea id="rawDescription" class="form-textarea" placeholder="Explain the problem in detail. Mention any urgency, deadlines, safety risks, or affected peers..." required></textarea>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                <button type="reset" class="btn btn-secondary">
+                    <i class="fa-solid fa-rotate-left"></i> Clear Form
+                </button>
+                <button type="submit" id="submitBtn" class="btn btn-primary">
+                    <i class="fa-solid fa-bolt"></i> Ingest & Trigger Multi-Agent Pipeline
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Live Multi-Agent Pipeline Execution Visualizer -->
+<div id="pipelineVisualizer" class="pipeline-visualizer">
+    <div class="card" style="border-color: var(--border-medium);">
+        <div class="card-header" style="background: rgba(59, 130, 246, 0.1);">
+            <div class="card-title">
+                <i class="fa-solid fa-network-wired" style="color: #60A5FA;"></i>
+                Live Multi-Agent Orchestration Trace
+            </div>
+            <div id="pipelineStatusBadge" class="badge badge-medium">
+                <i class="fa-solid fa-spinner fa-spin"></i> Agents Coordinating...
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Ticket Result Summary Alert (Revealed on Completion) -->
+            <div id="resultBanner" style="display: none; margin-bottom: 1.5rem; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: var(--radius-md); padding: 1.25rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <div style="font-size: 0.82rem; font-weight: 700; color: #6EE7B7; text-transform: uppercase;">
+                            <i class="fa-solid fa-circle-check"></i> Ticket Successfully Created & Dispatched
+                        </div>
+                        <div style="font-size: 1.35rem; font-weight: 800; color: #FFFFFF; margin-top: 0.25rem;">
+                            Ticket ID: <span id="resTicketId" class="ticket-id-link font-mono">RES-XXXX</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <a id="trackTicketLink" href="{{ url_for('track_page') }}" class="btn btn-primary btn-sm">
+                            <i class="fa-solid fa-arrow-right"></i> Track Ticket Progress
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3 Agent Pipeline Cards -->
+            <div class="pipeline-cards-grid">
+                <!-- Step 1: Understanding -->
+                <div id="stepCard1" class="agent-step-card">
+                    <div class="step-header">
+                        <span class="step-num">Step 1</span>
+                        <i id="stepIcon1" class="step-status-icon fa-solid fa-spinner fa-spin"></i>
+                    </div>
+                    <div class="step-agent-name">
+                        <i class="fa-solid fa-brain" style="color: #38BDF8;"></i> Understanding Agent
+                    </div>
+                    <div class="step-desc">
+                        Extracts semantic intent, category, entities, location, and urgency cues.
+                    </div>
+                    <div id="stepOutput1" class="step-output-box" style="display: none;">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Step 2: Priority Assessment -->
+                <div id="stepCard2" class="agent-step-card">
+                    <div class="step-header">
+                        <span class="step-num">Step 2</span>
+                        <i id="stepIcon2" class="step-status-icon fa-solid fa-clock"></i>
+                    </div>
+                    <div class="step-agent-name">
+                        <i class="fa-solid fa-gauge-high" style="color: #FBBF24;"></i> Priority Agent
+                    </div>
+                    <div class="step-desc">
+                        Computes urgency, severity, and student impact score to grade priority.
+                    </div>
+                    <div id="stepOutput2" class="step-output-box" style="display: none;">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Step 3: Department Assignment -->
+                <div id="stepCard3" class="agent-step-card">
+                    <div class="step-header">
+                        <span class="step-num">Step 3</span>
+                        <i id="stepIcon3" class="step-status-icon fa-solid fa-clock"></i>
+                    </div>
+                    <div class="step-agent-name">
+                        <i class="fa-solid fa-building-user" style="color: #A78BFA;"></i> Assignment Agent
+                    </div>
+                    <div class="step-desc">
+                        Selects responsible department, designates staff role, and assigns SLA.
+                    </div>
+                    <div id="stepOutput3" class="step-output-box" style="display: none;">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/submit.js') }}"></script>
+{% endblock %}

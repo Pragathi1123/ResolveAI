@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}ResolveAI - Student Grievance Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-graduation-cap" style="color: #60A5FA;"></i>
+            Welcome, {{ current_user.name }}
+        </h1>
+        <p class="page-subtitle">
+            Student USN: <strong class="font-mono" style="color: #93C5FD;">{{ current_user.student_id or 'Campus Student' }}</strong> &bull; {{ current_user.email }}
+        </p>
+    </div>
+    <div>
+        <a href="{{ url_for('submit_page') }}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> Submit New Grievance
+        </a>
+    </div>
+</div>
+
+<!-- Student Stats Cards -->
+<div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-blue">
+            <i class="fa-solid fa-folder-open"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">My Submissions</span>
+            <span class="stat-value">{{ my_complaints|length }}</span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-amber">
+            <i class="fa-solid fa-hourglass-half"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Pending / In Progress</span>
+            <span class="stat-value">
+                {{ my_complaints|selectattr('status', 'in', ['Submitted', 'Assigned', 'In Progress'])|list|length }}
+            </span>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon-wrapper stat-emerald">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-info">
+            <span class="stat-label">Resolved & Closed</span>
+            <span class="stat-value">
+                {{ my_complaints|selectattr('status', 'in', ['Resolved', 'Closed'])|list|length }}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Complaints Directory Card -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">
+            <i class="fa-solid fa-list-check" style="color: #38BDF8;"></i>
+            My Grievance History & Live Status
+        </div>
+        <span class="pill-badge">{{ my_complaints|length }} Grievances Recorded</span>
+    </div>
+    <div class="table-container">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th>Ticket ID</th>
+                    <th>Subject & Location</th>
+                    <th>Category</th>
+                    <th>Assigned Department</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if my_complaints %}
+                    {% for c in my_complaints %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('track_page', ticket_id=c.ticket_id) }}" class="ticket-id-link">
+                                {{ c.ticket_id }}
+                            </a>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600; color: #FFFFFF;">{{ c.subject }}</div>
+                            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.2rem;">
+                                <i class="fa-solid fa-location-dot" style="color: #F87171;"></i> {{ c.location }}
+                            </div>
+                        </td>
+                        <td>
+                            <span style="color: #CBD5E1; font-size: 0.82rem;">{{ c.category }}</span>
+                        </td>
+                        <td>
+                            <span style="color: #A78BFA; font-size: 0.82rem; font-weight: 600;">{{ c.department }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ c.priority|lower }}">{{ c.priority }}</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-status status-{{ c.status|lower|replace(' ', '-') }}">{{ c.status }}</span>
+                        </td>
+                        <td style="text-align: right;">
+                            <a href="{{ url_for('track_page', ticket_id=c.ticket_id) }}" class="btn btn-secondary btn-sm">
+                                <i class="fa-solid fa-magnifying-glass-location"></i> Track Progress
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                            <i class="fa-solid fa-inbox" style="font-size: 2rem; margin-bottom: 0.75rem; display: block;"></i>
+                            You have not submitted any complaints yet.
+                            <div style="margin-top: 1rem;">
+                                <a href="{{ url_for('submit_page') }}" class="btn btn-primary btn-sm">
+                                    <i class="fa-solid fa-plus"></i> Submit Your First Grievance
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

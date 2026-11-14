@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}ResolveAI - Track Complaint Progress{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-magnifying-glass-location" style="color: #38BDF8;"></i>
+            Ticket Tracking & Audit Trail
+        </h1>
+        <p class="page-subtitle">
+            Inspect real-time resolution status, chronological milestones, and transparent agent decision reasoning.
+        </p>
+    </div>
+</div>
+
+<!-- Search Bar Card -->
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-body" style="padding: 1.25rem 1.5rem;">
+        <form id="trackSearchForm" onsubmit="handleTrackSearch(event)" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 280px; position: relative;">
+                <i class="fa-solid fa-ticket" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                <input type="text" id="trackInput" class="form-input font-mono" style="padding-left: 2.5rem;" placeholder="Enter Ticket ID (e.g. RES-20261110-WIFI1)" value="{{ initial_ticket_id }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-search"></i> Query Ticket
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="loadSampleTicket()">
+                <i class="fa-solid fa-dice"></i> Load Demo Ticket
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="trackLoader" style="display: none; text-align: center; padding: 3rem 0;">
+    <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--primary-blue);"></i>
+    <p style="margin-top: 1rem; color: var(--text-secondary);">Querying database and agent audit logs...</p>
+</div>
+
+<!-- Ticket Content (Injected by JS) -->
+<div id="trackResults" style="display: none;">
+    <!-- Top Progress Tracker -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-timeline" style="color: #38BDF8;"></i>
+                Lifecycle Progress Tracker
+            </div>
+            <span id="headerStatusBadge" class="badge badge-status">--</span>
+        </div>
+        <div class="card-body">
+            <div class="timeline-tracker" id="timelineContainer">
+                <div class="timeline-step" id="step-Submitted">
+                    <div class="timeline-dot"><i class="fa-solid fa-file-import"></i></div>
+                    <div class="timeline-label">Submitted</div>
+                </div>
+                <div class="timeline-step" id="step-Assigned">
+                    <div class="timeline-dot"><i class="fa-solid fa-building-circle-check"></i></div>
+                    <div class="timeline-label">Assigned</div>
+                </div>
+                <div class="timeline-step" id="step-In Progress">
+                    <div class="timeline-dot"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                    <div class="timeline-label">In Progress</div>
+                </div>
+                <div class="timeline-step" id="step-Resolved">
+                    <div class="timeline-dot"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="timeline-label">Resolved</div>
+                </div>
+                <div class="timeline-step" id="step-Closed">
+                    <div class="timeline-dot"><i class="fa-solid fa-box-archive"></i></div>
+                    <div class="timeline-label">Closed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Verified Closure Summary Card (Only shown if resolved/closed) -->
+    <div id="closureSummaryCard" class="card" style="display: none; margin-bottom: 2rem; border-color: rgba(16, 185, 129, 0.4); background: #0A1C22;">
+        <div class="card-header" style="background: rgba(16, 185, 129, 0.1);">
+            <div class="card-title" style="color: #6EE7B7;">
+                <i class="fa-solid fa-certificate"></i>
+                Authorized AI Resolution Summary
+            </div>
+            <span class="pill-badge" style="background: rgba(16, 185, 129, 0.2); color: #A7F3D0;">
+                <i class="fa-solid fa-check-double"></i> Verified Action
+            </span>
+        </div>
+        <div class="card-body">
+            <p id="closureSummaryText" style="font-size: 0.95rem; color: #E2E8F0; line-height: 1.6;"></p>
+            <div style="margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid rgba(255, 255, 255, 0.08); font-size: 0.82rem; color: #94A3B8;">
+                <strong>Field Technician Notes:</strong> <span id="staffResolutionNotes">--</span>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <!-- Left Column: Complaint Details -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-circle-info" style="color: #60A5FA;"></i>
+                    Grievance Specifications
+                </div>
+                <span id="detailPriorityBadge" class="badge">--</span>
+            </div>
+            <div class="card-body">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Ticket ID</div>
+                        <div id="detailTicketId" class="ticket-id-link font-mono" style="font-size: 1.05rem; margin-top: 0.2rem;">--</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Subject</div>
+                        <div id="detailSubject" style="font-size: 1.05rem; font-weight: 700; color: #FFFFFF; margin-top: 0.2rem;">--</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Location</div>
+                        <div id="detailLocation" style="color: #CBD5E1; margin-top: 0.2rem;"><i class="fa-solid fa-location-dot" style="color: #F87171;"></i> <span>--</span></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Assigned Department</div>
+                        <div id="detailDepartment" style="font-weight: 600; color: #A78BFA; margin-top: 0.2rem;">--</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Designated Staff Role</div>
+                        <div id="detailStaffRole" style="color: #94A3B8; margin-top: 0.2rem;">--</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Target SLA</div>
+                        <div id="detailSLA" style="color: #FBBF24; font-weight: 600; margin-top: 0.2rem;">--</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Original Description</div>
+                        <div id="detailDescription" style="margin-top: 0.35rem; padding: 0.85rem; background: #080E1C; border-radius: var(--radius-sm); font-size: 0.88rem; color: #CBD5E1; line-height: 1.5; border: 1px solid var(--border-subtle);">--</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Agent Activity Trace -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-robot" style="color: #38BDF8;"></i>
+                    Agent Decision & Activity Trace
+                </div>
+                <span class="pill-badge">
+                    <i class="fa-solid fa-list-check"></i> Audit Logs
+                </span>
+            </div>
+            <div class="card-body">
+                <div id="agentLogsContainer" style="max-height: 520px; overflow-y: auto; padding-right: 0.5rem;">
+                    <!-- Agent logs injected via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/track.js') }}"></script>
+{% endblock %}

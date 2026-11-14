@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}ResolveAI - Staff Account Administration{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">
+            <i class="fa-solid fa-users-gear" style="color: #60A5FA;"></i>
+            Staff Account Management
+        </h1>
+        <p class="page-subtitle">
+            Create, audit, and deactivate departmental staff accounts. Only authenticated administrators can access this console.
+        </p>
+    </div>
+    <a href="{{ url_for('admin_page') }}" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-arrow-left"></i> Return to Admin Dashboard
+    </a>
+</div>
+
+<div style="display: grid; grid-template-columns: 360px 1fr; gap: 2rem; align-items: start;">
+    <!-- Create Staff Account Form -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-user-plus" style="color: #38BDF8;"></i>
+                Create Staff Account
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('api_admin_create_staff') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <div class="form-group" style="margin-bottom: 1.1rem;">
+                    <label class="form-label" for="staffName">
+                        <i class="fa-solid fa-user"></i> Full Name
+                    </label>
+                    <input type="text" id="staffName" name="name" class="form-input" placeholder="e.g. Inspector Ramesh" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.1rem;">
+                    <label class="form-label" for="staffEmail">
+                        <i class="fa-solid fa-envelope"></i> Staff Email
+                    </label>
+                    <input type="email" id="staffEmail" name="email" class="form-input" placeholder="e.g. ramesh.staff@campus.edu" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.1rem;">
+                    <label class="form-label" for="staffDepartment">
+                        <i class="fa-solid fa-building-user"></i> Assigned Department
+                    </label>
+                    <select id="staffDepartment" name="department" class="form-select" required>
+                        <option value="" disabled selected>Select Department</option>
+                        {% for d in departments %}
+                        <option value="{{ d }}">{{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label class="form-label" for="staffPassword">
+                        <i class="fa-solid fa-key"></i> Temporary Password (Min 6 chars)
+                    </label>
+                    <input type="password" id="staffPassword" name="password" class="form-input" placeholder="Enter password" required minlength="6">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fa-solid fa-shield-plus"></i> Provision Staff Account
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Staff Directory Table -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-id-badge" style="color: #FBBF24;"></i>
+                Departmental Staff Directory
+            </div>
+            <span class="pill-badge">{{ staff_users|length }} Staff Accounts</span>
+        </div>
+        <div class="table-container">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Officer</th>
+                        <th>Assigned Department</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if staff_users %}
+                        {% for s in staff_users %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 600; color: #FFFFFF;">{{ s.name }}</div>
+                                <div style="font-size: 0.78rem; color: var(--text-muted);">{{ s.email }}</div>
+                            </td>
+                            <td>
+                                <span style="font-size: 0.82rem; color: #A78BFA; font-weight: 600;">{{ s.department or 'General' }}</span>
+                            </td>
+                            <td>
+                                {% if s.is_active %}
+                                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #86EFAC; border: 1px solid rgba(16, 185, 129, 0.5);">Active</span>
+                                {% else %}
+                                <span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #FCA5A5; border: 1px solid rgba(239, 68, 68, 0.5);">Deactivated</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span style="font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">{{ s.created_at[:10] if s.created_at else '' }}</span>
+                            </td>
+                            <td style="text-align: right;">
+                                <form method="POST" action="{{ url_for('api_admin_toggle_staff_active') }}" style="display: inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="user_id" value="{{ s.id }}">
+                                    <input type="hidden" name="set_active" value="{{ 0 if s.is_active else 1 }}">
+                                    {% if s.is_active %}
+                                    <button type="submit" class="btn btn-secondary btn-sm" style="color: #F87171; border-color: rgba(239, 68, 68, 0.3);" onclick="return confirm('Deactivate account for {{ s.name }}? They will not be able to log in.')">
+                                        <i class="fa-solid fa-ban"></i> Deactivate
+                                    </button>
+                                    {% else %}
+                                    <button type="submit" class="btn btn-primary btn-sm" style="background: rgba(16, 185, 129, 0.3); border-color: #10B981; color: #A7F3D0;">
+                                        <i class="fa-solid fa-circle-check"></i> Activate
+                                    </button>
+                                    {% endif %}
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                                No staff accounts found. Use the form on the left to create one.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
